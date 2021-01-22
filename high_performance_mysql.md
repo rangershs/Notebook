@@ -6,6 +6,8 @@
     - EXPLAIN + SELECT + \G
     - 近似结果，当作优化的参考
     - 涉及子查询时，MySQL会执行子查询将结果放在临时表中，然后完成外层查询优化
+    - *(MySQL5.6允许匿名临时表尽可能晚的具体化，而不是在每次优化和执行此临时表部分时再创建使用；
+        因此，新版EXPLAIN带子查询的查询语句并不需要先执行子查询)*
 - EXPLAIN PARTITION
     - 显示查询访问的分区
 - EXPLAIN EXTENDED
@@ -39,6 +41,15 @@
         - MySQL优化将查询条件转换为常量
     - **NULL**
         - MySQL在优化阶段分解查询语句，执行阶段可以不用再访问表就得到结果
+- key_len
+    - 单位是byte，显示索引字段可能的最大长度，不是实际使用的长度
+    - MySQL在**utf8**字符集下，每个字符最多为**3字节**长
+- **Extra**
+    - Using index - 使用覆盖索引，避免访问表
+    - Using where - 存储引擎检索后再进行过滤
+    - Using temporary - 使用临时表对查询结果排序
+    - Using filesort - 对结果使用文件排序，在内存或磁盘上完成
+    - *Range checked for each record* - 没有好用的索引，联接时重新评估
 
 #### Chapter1
 
