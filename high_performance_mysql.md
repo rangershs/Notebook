@@ -207,3 +207,11 @@
             (SELECT primary_key FROM table WHERE sex='M' ORDER BY rating LIMIT 10000,10) AS t
             USING (primary_key);
           ```
+
+#### Chapter6
+- **库表结构优化 + 索引优化 + 查询优化**
+- 慢查询日志会记录查询执行的相关信息，如响应时间、扫描的行数、返回的行数
+- MySQL应用WHERE
+    - 存储引擎层在索引中使用WHERE条件过滤不满足条件的记录
+    - 服务器层使用索引覆盖扫描过滤不满足条件的记录，无须返回表查询记录(Using Index)
+    - 服务器层从数据表中返回数据，然后过滤不满足条件的记录(Using Where)
