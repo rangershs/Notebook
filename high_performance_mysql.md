@@ -215,3 +215,15 @@
     - 存储引擎层在索引中使用WHERE条件过滤不满足条件的记录
     - 服务器层使用索引覆盖扫描过滤不满足条件的记录，无须返回表查询记录(Using Index)
     - 服务器层从数据表中返回数据，然后过滤不满足条件的记录(Using Where)
+- SQL执行过程
+    - SQL -> 查询缓存 -> 语法解析/预处理 -> 查询优化器 -> 生成执行计划 -> 存储引擎执行查询计划
+- MySQL客户端和服务端的通信协议是**半双工**的，任一时刻只能有一端传送数据
+    - 通常需要等所有的数据都发送给客户端后才能释放本次查询占用的资源
+- MySQL线程/连接的状态
+    - SHOW FULL PROCESSLIST
+    - Sleep
+    - Query - 线程正在执行查询
+    - Locked - 线程正在等待表锁
+    - Analyzing and statistics - 线程正在收集存储引擎的统计信息，并生成执行计划，一般是在进行**GROUP BY/ORDER BY/UNION ALL**操作
+    - Sorting results - 排序
+    - Sending data - 生成结果集，或发送数据给客户端
