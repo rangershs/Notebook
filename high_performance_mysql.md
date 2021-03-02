@@ -245,5 +245,28 @@
 - 存储引擎根据执行计划生成的指令树逐步执行完成数据查询
     - InnoDB实现了细粒度、并发度更高的行锁
     - 存储引擎共有的特性由服务器层实现，如表锁、时间日期函数、视图、触发器等等
-- Key word
+- 关联子查询
+    - ```SELECT * FROM film WHERE film_id IN (SELECT film_id FROM actor WHERE actor_id=1);```
+    - 上面查询可能会被改写为
+        - ```SELECT * FROM film WHERE EXISTS (SELECT * FROM actor WHERE actor_id=1 AND actor.film_id=film.film_id);```
+        - DEPENDENT SUBQUERY，子查询依赖外层的条件，先对film表执行全表扫描，然后对返回的file_id执行子查询
+    - 可以使用JOIN优化```SELECT * FROM film INNER JOIN actor USING(film_id) WHERE actor_id=1;```
+- 索引合并优化
+    - WHERE包含多个复杂条件时，MySQL能够访问单个表中的多个索引以合并和交叉过滤的方式定位需要查找的行记录
+- *MySQL无法利用多核特性并行执行查询*
+- *MySQL所有的关联都是嵌套循环关联，原生不支持哈希关联*
+- 松散索引扫描(Using index for group-by)，跳跃而非连续的方式扫描索引的方式过滤数据
+- 索引条件下推(Index Condition Pushdown)，解决松散索引扫描的限制
+- 最大值与最小值**重写查询**
+    - ```SELECT MIN(actor_id) FROM actor WHERE name='shs';```字段name上没有索引，将执行全表扫描
+    - ```SELECT actor_id FROM actor USE INDEX(PRIMARY) WHERE name='shs' LIMIT 1;```**主键索引扫描**，查询满足条件的第一条记录就返回，使MySQL尽可能少地扫描数据
+- **MySQL不允许对一张表同时进行查询和更新**
+    - 通过生成表的形式执行多表关联UPDATE
+    - 【Error】```UPDATE actor AS outer SET cnt=(SELECT COUNT(*) FROM actor AS inner WHERE inner.type=outer.type);```
+    - ```UPDATE actor INNER JOIN (SELECT type, COUNT(*) AS count FROM actor GROUP BY type) AS der USING(type) SET actor.cnt=der.count;```
+- Hints
     - **SQL_NO_CACHE** - 不使用缓存，每次读取数据都会进行磁盘IO操作
+    - **STRAIGHT_JOIN** - 指定表的关联顺序
+    - **FOR UPDATE/LOCK IN SHARE MODE** - 主动给数据行加锁，可能会造成服务器的锁争用问题
+    - **USE INDEX/IGNORE INDEX/FORCE INDEX**
+
