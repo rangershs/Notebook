@@ -1,7 +1,8 @@
 ## High Performance MySQL
 ---
 
-#### 存储引擎和查询优化器是数据库的核心部件
+- **存储引擎和查询优化器是数据库的核心部件**
+- **快速、精确、简单，几乎不可能同时满足三者，最多满足其中的两个要求**
 ---
 
 #### Explain
@@ -15,6 +16,7 @@
     - 显示查询访问的分区
 - EXPLAIN EXTENDED
     - “逆向编译”执行计划为SELECT语句
+- **SHOW STATUS和慢查询日志查看SQL实际执行的状态**
 - id
     - 值越大，执行优先级越高
     - 值相同，按照顺序执行
@@ -269,4 +271,30 @@
     - **STRAIGHT_JOIN** - 指定表的关联顺序
     - **FOR UPDATE/LOCK IN SHARE MODE** - 主动给数据行加锁，可能会造成服务器的锁争用问题
     - **USE INDEX/IGNORE INDEX/FORCE INDEX**
-
+- COUNT() - 聚合函数
+    - 指定列或列表达式，统计非NULL的数量**设置列属性非NULL，可以加快不带WHERE下COUNT(col)的查询速度**
+    - COUNT(*)统计结果集的行数，并不会扩展成统计所有列的数量
+- 关联查询
+    - 确保ON或USING子句上的列有索引
+    - 一般来说，只需要在关联顺序中第2张表的相应列上创建索引; 比如优化器关联顺序是B-A，不需要在B表的相应列建立索引
+    - 确保GROUP BY和ORDER BY的表达式只涉及1张表的列，优化器才可能利用索引优化查询过程
+- GROUP BY/DISTINCT
+    - 最有效的优化方式是使用索引
+    - 如果没有索引可用，MySQL使用临时表或文件排序做分组
+    - **SQL_MODE设置为ONLY_FULL_GROUPBY，不允许SELECT中直接使用非分组列**
+    - **子查询中创建的临时表是没有任何索引的**
+    - **GROUP BY分组后若没有排序的需要，可以使用ORDER BY NULL避免文件排序**
+- *GROUP BY WITH ROLLUP*对返回的分组结果再做一次超级聚合
+- LIMIT
+    - OFFSET非常大时会扫描很多不需要的数据
+    - ```SELECT film_id, film_name FROM film ORDER BY title LIMIT 1000, 20```
+    - 尽量使用**索引覆盖扫描**，然后关联操作后返回所需要的列，避免查询所有的列
+    - ```SELECT film_id, film_name FROM film INNER JOIN (SELECT film_id FROM film ORDER BY title LIMIT 1000, 20) AS lim USING(film_id);```**延迟关联**
+    - 连续翻页情况下可以记录上一次翻页的位置，下一次翻页从前一次翻页点开始，可以减少扫描的数据量
+        - ```SELECT * FROM rental ORDER BY rental_id DESC LIMIT 20;```
+        - ```SELECT * FROM rental WHERE rental_id < 16030 ORDER BY rental_id DESC LIMIT 20;```
+    - 还可以使用<u>汇总表、冗余表</u>、<u>缓存、预读取</u>等方式
+- UNION
+    - 创建并填充临时表的方式执行查询，优化器很难做优化
+    - 手动地将WHERE、ORDER BY、LIMIT等子句“下推”到UNION的各个子句中
+    - UNION ALL > UNION，UNION默认添加DISTINCT选项，会对整个临时表作唯一性检查
