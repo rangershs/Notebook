@@ -298,3 +298,41 @@
     - 创建并填充临时表的方式执行查询，优化器很难做优化
     - 手动地将WHERE、ORDER BY、LIMIT等子句“下推”到UNION的各个子句中
     - UNION ALL > UNION，UNION默认添加DISTINCT选项，会对整个临时表作唯一性检查
+- 用户自定义变量(部分场景中很有用)
+    - 使用时无法利用查询缓存
+    - 生命周期在一个连接中有效
+    - 变量的类型是动态的，赋值时会发生变化
+    - **变量的赋值时间和顺序依赖于优化器，实际运行情况可能和预期存在差异**
+        - Invalid
+          ```
+          SELECT actor_id, @cur:=COUNT(*) AS cnt, @rank:=IF(@pre<>@cur, @rank+1, @rank) AS rank, @pre:=@cur AS dummy
+          FROM film_actor
+          GROUP BY actor_id
+          ORDER BY cnt DESC
+          LIMIT 10;
+          ```
+        - Valid 分2步，子查询生成临时表先查询相关信息，然后再对数据进行排名
+          ```
+          SELECT actor_id, @cur:=cnt AS cnt, @rank:=IF(@pre<>@cur, @rank+1, @rank) AS rank, @pre:=@cur AS dummy
+          FROM(
+              SELECT actor_id, COUNT(*) AS cnt
+              FROM film_actor
+              GROUP BY actor_id
+              ORDER BY cnt DESC
+              LIMIT 10
+          ) AS der;
+          ```
+    - 避免重复查询刚刚更新的数据
+        - ```
+          UPDATE t SET lastupdate=NOW() WHERE id=123;
+          SELECT lastupdate FROM t WHERE id=123;
+          ```
+        - ```
+          UPDATE t SET lastupdate=NOW() WHERE id=123 AND @now:=NOW();
+          SELECT @now;
+          ```
+        - 需要2次查询和2个网络往返，不过第2次查询不需要访问任何表就可以得到结果
+    - 案例
+        - 统计数量时加上排名操作
+        - 查询时计算总数和平均值
+    - *INSERT INTO...ON DUPLICATE KEY* 插入重复记录
