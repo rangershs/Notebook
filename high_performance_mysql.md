@@ -259,6 +259,9 @@
 - *MySQL所有的关联都是嵌套循环关联，原生不支持哈希关联*
 - 松散索引扫描(Using index for group-by)，跳跃而非连续的方式扫描索引的方式过滤数据
 - 索引条件下推(Index Condition Pushdown)，解决松散索引扫描的限制
+    - InnoDB只支持联合索引，因为聚簇索引直接能够获取到数据行
+    - 联合索引中第1个索引和后续索引成功匹配后，再回到聚簇索引树中查找数据行，减少扫描聚簇索引树的次数
+    - 默认开启，**Using Index Condition**，尽量建立联合索引，而不是一个列一个列地建立索引
 - 最大值与最小值**重写查询**
     - ```SELECT MIN(actor_id) FROM actor WHERE name='shs';```字段name上没有索引，将执行全表扫描
     - ```SELECT actor_id FROM actor USE INDEX(PRIMARY) WHERE name='shs' LIMIT 1;```**主键索引扫描**，查询满足条件的第一条记录就返回，使MySQL尽可能少地扫描数据
