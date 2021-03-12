@@ -201,7 +201,7 @@
     - *SELECT...FOR UPDATE*
     - InnoDB若不能有效地利用索引，MySQL会扫描并给全表加锁(表锁)
 - 优化排序**ORDER BY + LIMIT**
-    - 对于**选择性**非常低的列如性别，需要创建特殊的索引优化，index(sex, rating)
+    - 对于**选择性**非常低的列如**性别**，需要创建特殊的索引优化，index(sex, rating)
     - ```SELECT cols FROM table WHERE sex='M' ORDER BY rating LIMIT 10;```
     - 针对翻页的应用场景，特别是LIMIT偏移量很大的翻页，一般采用反范式化、缓存、预先计算的方式处理
     - 另一个方案是延迟关联，利用覆盖索引快速查找需要的主键
@@ -224,6 +224,7 @@
     - **SQL** -> 查询缓存 -> 语法解析/预处理 -> 查询优化器 -> 生成**执行计划** -> 存储引擎执行查询计划
 - MySQL客户端和服务端的通信协议是**半双工**的，任一时刻只能有一端传送数据
     - 通常需要等所有的数据都发送给客户端后才能释放本次查询占用的资源
+    - 只查询需要的数据，常用LIMIT，少用SELECT *
 - MySQL线程/连接的状态
     - SHOW FULL PROCESSLIST
     - Sleep
@@ -247,7 +248,7 @@
 - 存储引擎根据执行计划生成的指令树逐步执行完成数据查询
     - InnoDB实现了细粒度、并发度更高的行锁
     - 存储引擎共有的特性由服务器层实现，如表锁、时间日期函数、视图、触发器等等
-- 关联子查询
+- 关联子查询**IN -> EXISTS**
     - ```SELECT * FROM film WHERE film_id IN (SELECT film_id FROM actor WHERE actor_id=1);```
     - 上面查询可能会被改写为
         - ```SELECT * FROM film WHERE EXISTS (SELECT * FROM actor WHERE actor_id=1 AND actor.film_id=film.film_id);```
@@ -261,7 +262,10 @@
 - 索引条件下推(Index Condition Pushdown)，解决松散索引扫描的限制
     - InnoDB只支持联合索引，因为聚簇索引直接能够获取到数据行
     - 联合索引中第1个索引和后续索引成功匹配后，再回到聚簇索引树中查找数据行，减少扫描聚簇索引树的次数
-    - 默认开启，**Using Index Condition**，尽量建立联合索引，而不是一个列一个列地建立索引
+    - 默认开启，**Using Index Condition**，尽量建立联合索引，而不是多个单列索引
+- NULL
+    - MySQL支持索引列的NULL查询，包括IS NULL/IS NOT NULL，属于范围查询; 因此如果索引失效，可能是回表的数据量太大导致的
+    - 非空约束列的IS NULL查询不会走索引，有更高效的查询方式(What???)
 - 最大值与最小值**重写查询**
     - ```SELECT MIN(actor_id) FROM actor WHERE name='shs';```字段name上没有索引，将执行全表扫描
     - ```SELECT actor_id FROM actor USE INDEX(PRIMARY) WHERE name='shs' LIMIT 1;```**主键索引扫描**，查询满足条件的第一条记录就返回，使MySQL尽可能少地扫描数据
@@ -339,3 +343,7 @@
         - 统计数量时加上排名操作
         - 查询时计算总数和平均值
     - *INSERT INTO...ON DUPLICATE KEY* 插入重复记录
+- 查询条件(列)的类型一定要匹配，不然无法利用索引查询
+    - 比如字符串列要加""，否则会被数据库隐式转换为数字
+- 操作符!=, <>, NOT IN在大多数情况下不会利用索引，具体实现依赖于存储引擎的优化策略
+    - NOT LIKE一定不会使用索引
