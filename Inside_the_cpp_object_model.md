@@ -118,3 +118,24 @@ unsigned int (Point3d::*) ();       //  type of address of member function
     - **尽量不要同时使用多态机制与多重继承/虚拟继承特性**，必要时应考虑重新设计程序模型
 - 函数的性能Function Performance
     - inline member > non-member friend == static member == non-static member > virtual member > virtual member + multi-derivation > virtual member + virtual derivation
+
+
+#### Chapter-6
+- placement operator new
+    ```
+    Point2w* ptw = new(arena) Point2w;
+
+    void* operator new(size_t size, void* p) { return p; }
+    ```
+    - 编译系统保证Point2w的构造函数自动在arena所指的地址上调用
+    - 不支持多态(polymorphism)
+    - 在基类大小的内存上构造派生类对象，如果派生类比基类更大，那么派生类的构造函数会导致严重的破坏
+
+
+#### Chapter-7
+- C++ RTTI只对“多态”类型有效，即使用继承与动态绑定的类型
+- C++ 具备多态性质的class包含直接声明或继承的virtual function
+- virtual function table的第1个slot包含type_info object的地址，即class类型信息的地址
+- dynamic_cast
+    - 由基类指针或引用指向的class object的类型必须在执行期通过vptr获取
+    - 相比于static_cast，代价较昂贵，却安全得多
