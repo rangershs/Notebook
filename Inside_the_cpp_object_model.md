@@ -30,3 +30,69 @@ private:
 - OB设计可能比对等的OO设计速度快而且空间更紧凑，但OB设计没有弹性
     - 速度快，函数调用操作都在编译时期解析完成，不需要设置virtual机制
     - 空间紧凑，每个对象不需要负担为了支持virtual机制的额外负荷
+
+
+#### Chapter-3
+- Empty virtual base class的大小视编译器的处理而不同，可能为1byte，可能为0byte
+- C++对象模型尽量以空间优化和存取速度优化的考虑来表现data members，并且保持和C-struct的兼容性
+- 由于C++的语言规则出现的一些*防御性程序设计风格*
+    - 总是把"nested type声明"放在class的起始处
+    - *所有的inlines定义都放在class外(C++2.0已修订)*
+    - *data members在class的起始处声明(C++2.0已修订)*
+- C++Std要求同一个access section中的data members符合”较晚出现的members有较高的地址“，因此members的排列不一定是连续的
+    - members之间可能会填充字节满足内存对齐的要求
+    - members之间可能插入vptr支持多态特性
+- 通常，选择某些函数作为inline，是设计class的一个重要课题
+- C++语言保证“出现在derived class中的base class subobject有其完整性”
+    - 把一个class分解为两层或多层，可能会导致其空间的膨胀
+```
+class Point2d
+{
+public:
+    Point2d(float x = 0.0, float y = 0.0): x_(x), y_(y) {}
+    ~Point2d() {}
+
+    float x() { return x_; }
+    float y() { return y_; }
+    virtual float z() { return 0.0; }
+
+    virtual void operator+=(const Point2d& rhs)
+    {
+        x_ += rhs.x();
+        y_ += rhs.y();
+    }
+
+protected:
+    float x_;
+    float y_;
+};
+
+class Point3d
+{
+public:
+    Point3d(float x = 0.0, float y = 0.0, float z = 0.0)
+        : Point2d(x, y), z_(z) {}
+    ~Point3d() {}
+
+    float z() { return z_; }
+
+    virtual void operator+=(const Point2d& rhs)
+    {
+        Point2d::operator+=(rhs);
+        z_ += rhs.z();
+    }
+
+protected:
+    float x_;
+    float y_;
+    float z_;
+};
+```
+- 多重继承下，data members的位置在编译时就确定了，存取members就像单一继承一样是一个简单的offset运算
+    - derived class object类型指针(引用)转换为第一个base class类型的指针，不需要编译器修改地址
+    - derived class object类型指针(引用)转换为第二或后继base class类型的指针，需要编译器介入修改地址，才能指向subobject的地址
+- 虚拟继承
+    - virtual base class在多数时候最有效的运用形式：一个抽象的virtual base class，没有任何data members
+    - 经一个非多态的class object存取一个继承而来的virtual base class member，可以被优化为一个直接存取操作，进行简单的offset运算即可
+    - derived class内部布局分为一个不变区域和一个共享区域
+    - derived class共享区域的实现多数情况下在class object中插入指针，指向virtual base class members，或指向virtual base class table(table中保存virtual base class指针)
