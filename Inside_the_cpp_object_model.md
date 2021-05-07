@@ -96,3 +96,25 @@ protected:
     - 经一个非多态的class object存取一个继承而来的virtual base class member，可以被优化为一个直接存取操作，进行简单的offset运算即可
     - derived class内部布局分为一个不变区域和一个共享区域
     - derived class共享区域的实现多数情况下在class object中插入指针，指向virtual base class members，或指向virtual base class table(table中保存virtual base class指针)
+
+
+#### Chapter-4
+- C++设计准则之一：non-static member function至少必须和一般的non-member function有相同的效率
+    - member function会被转化为non-member function的形式，增加一个额外的函数参数 - *this*指针
+    - 对non-static data member的存取操作转换为经过*this*指针完成
+- 由一个class object(not pointer or reference)调用virtual function，应该总是被编译器像处理non-static member function一样决议
+- static member function由于缺乏this指针，几乎等同于non-member function
+```
+&Point3d::object_count();
+unsigned int (*) ();                //  type of address of static member function
+unsigned int (Point3d::*) ();       //  type of address of member function
+```
+- 多态
+    - 以一个public base class的指针或引用，寻址出一个derived class的过程
+    - 在执行期确定指针(或引用)的对象的类型 - RTTI
+- 多重继承下支持virtual function，使用第二或后继base class时，必须在执行期调整this指针，才能调用正确的destructor和virtual function
+    - derived class包含额外的virtual table，比如one -> master vtb, the other -> secondary vtb
+- 最好不在virtual base class声明non-static data members，否则虚拟继承下的virtual function机制将变得异常复杂，它也会涉及this指针的调整
+    - **尽量不要同时使用多态机制与多重继承/虚拟继承特性**，必要时应考虑重新设计程序模型
+- 函数的性能Function Performance
+    - inline member > non-member friend == static member == non-static member > virtual member > virtual member + multi-derivation > virtual member + virtual derivation
