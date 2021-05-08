@@ -134,6 +134,9 @@ unsigned int (Point3d::*) ();       //  type of address of member function
 
 #### Chapter-7
 - C++ RTTI只对“多态”类型有效，即使用继承与动态绑定的类型
+    - typeid & type_info不仅适用于**多态class**，也适用于**内建类型**和非多态的**自定义类型**
+    - typeid在**编译期**获得内建类型
+    - typeid在**执行期**获得多态类型
 - C++ 具备多态性质的class包含直接声明或继承的virtual function
 - virtual function table的第1个slot包含type_info object的地址，即class类型信息的地址
 - dynamic_cast
