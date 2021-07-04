@@ -20,6 +20,78 @@
     - BSD License
     - Apache License
 
+#### Chapter3
+- 迭代器模式
+    - 提供一种方法，使之能够依序遍历容器的各个元素，而又无需暴露容器的内部实现
+    - STL = Container + Algorithm + Iterator(class/function template)
+    - 迭代器是一种行为类似指针的对象
+    - RTTI typeid()获得的是类型名称，不能用于声明变量
+        - function template的参数推导机制可以获取迭代器所指对象的类型
+        - ```
+            template<typename I, typename T>
+            void func_impl(I iter, T t)
+            {
+                T temp;
+                ...;
+            }
+            template<typename I>
+            inline
+            void func(I iter)
+            {
+                func_impl(iter, *iter);
+            }
+            int main()
+            {
+                int i = 2021;
+                func(&i);
+                return 0;
+            }
+          ```
+    - typename Iter::value_type
+        - class type内部声明内嵌类型
+        - 模板实例化前编译器不知道模板参数的意义，不知道value_type是成员函数、数据成员还是内嵌类型
+        - typename显示指定value_type是类型
+    - 偏特化(STL接受原生指针作为迭代器)
+        - 如果class template拥有一个以上template参数，可以针对其中一个或多个参数进行特化
+        - 其实并不一定是对某个或某些模板参数指定参数值，而是提供条件限制的特化版本，如下
+        - ```
+            template<typename T> class C {};
+            template<typename T> class C<T*> {};
+            template<typename T> class C<const T*> {};
+          ```
+    - ```
+        template<class T>
+        struct iterator_traits
+        {
+            typedef typename T::value_type          value_type;
+            typedef typename T::difference_type     difference_type;
+            typedef typename T::pointer             pointer;
+            typedef typename T::reference           reference;
+            typedef typename T::iterator_category   iterator_category;
+        };
+        template<class T>
+        struct iterator_traits<T*>
+        {
+            typedef T           value_type;
+            typedef ptrdiff_t   difference_type;
+            typedef T*          pointer;
+            typedef T&          reference;
+        };
+        template<class T>
+        struct iterator_traits<const T*>
+        {
+            typedef T           value_type;
+            typedef ptrdiff_t   difference_type;
+            typedef const T*    pointer;
+            typedef const T&    reference;
+        };
+      ```
+    - Iterator Category
+        - Input/Output/Forward/Bidirectional/Random Access Iterator
+    - C++函数以by reference的方式传回左值
+        - mutable iterator，value_type T，传回T&
+        - constant iterator，value_type T，传回const T&
+
 #### Hashtable
 - 可视为一种字典结构
 - **hashfunction**，将某一元素映射为可接受的值，一般是将大数映射为小数
