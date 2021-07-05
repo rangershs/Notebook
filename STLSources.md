@@ -76,6 +76,7 @@
             typedef ptrdiff_t   difference_type;
             typedef T*          pointer;
             typedef T&          reference;
+            typedef random_access_iterator_tag iterator_category;
         };
         template<class T>
         struct iterator_traits<const T*>
@@ -84,13 +85,77 @@
             typedef ptrdiff_t   difference_type;
             typedef const T*    pointer;
             typedef const T&    reference;
+            typedef random_access_iterator_tag iterator_category;
         };
       ```
     - Iterator Category
         - Input/Output/Forward/Bidirectional/Random Access Iterator
+        - ```
+            struct input_iterator_tag {};
+            struct output_iterator_tag {};
+            struct forward_iterator_tag : public input_iterator_tag {};
+            struct bidirectional_iterator_tag : public forward_iterator_tag {};
+            struct random_access_iterator_tag : public bidirectional_iterator_tag {};
+          ```
     - C++函数以by reference的方式传回左值
         - mutable iterator，value_type T，传回T&
         - constant iterator，value_type T，传回const T&
+    - ```
+        if (n >= 0)
+            while (n--) ++i;
+        else
+            while (n++) --i;
+      ```
+    - 重载机制 + 继承消除传递调用
+        - ```
+            struct B {};
+            struct D1 : public B {};
+            struct D2 : public D1 {};
+
+            template<class I>
+            inline void func(I& i, B) { cout << "B version" << endl; }
+            template<class I>
+            inline void func(I& i, D2) { cout << "D2 version" << endl; }
+
+            int main()
+            {
+                int* p;
+                func(p, B());       //  "B version"
+                func(p, D1());      //  "B version"
+                func(p, D2());      //  "D2 version"
+                return 0;
+            }
+          ```
+    - distance()
+        - ```
+            template<class InputIterator>
+            inline typename iterator_traits<InputIterator>::difference_type
+            __distance(InputIterator first, InputIterator last, input_iterator_tag)
+            {
+                typename iterator_traits<InputIterator>::difference_type n = 0;
+                while (first != last)
+                {
+                    ++n;
+                    ++first;
+                }
+                return n;
+            }
+
+            template<class RandomAccessIterator>
+            inline typename iterator_traits<RandomAccessIterator>::difference_type
+            __distance(RandomAccessIterator first, RandomAccessIterator last, random_access_iterator_tag)
+            {
+                return last - first;
+            }
+
+            template<class InputIterator>
+            inline iterator_traits<InputIterator>::difference_type
+            distance(InputIterator first, InputIterator last)
+            {
+                typedef typename iterator_traits<InputIterator>::iterator_category category;
+                return __distance(first, last, category());
+            }
+          ```
 
 #### Hashtable
 - 可视为一种字典结构
