@@ -149,13 +149,30 @@
             }
 
             template<class InputIterator>
-            inline iterator_traits<InputIterator>::difference_type
+            inline typename iterator_traits<InputIterator>::difference_type
             distance(InputIterator first, InputIterator last)
             {
                 typedef typename iterator_traits<InputIterator>::iterator_category category;
                 return __distance(first, last, category());
             }
           ```
+    - iterator
+        - ```
+            template<class Category,
+                     class T,
+                     class Difference = ptrdiff_t,
+                     class Pointer = T*,
+                     class Reference = T&>
+            struct iterator
+            {
+                typedef Category    iterator_category;
+                typedef T           value_type;
+                typedef Difference  difference_type;
+                typedef Pointer     pointer;
+                typedef Reference   reference;
+            };
+          ```
+    - traits编程技法利用内嵌类型的编程技巧，与编译器的模板参数推导功能实现
 
 #### Hashtable
 - 可视为一种字典结构
