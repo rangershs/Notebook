@@ -173,6 +173,36 @@
             };
           ```
     - traits编程技法利用内嵌类型的编程技巧，与编译器的模板参数推导功能实现
+    - 编译器只有面对class object形式的参数，才会做参数推导
+        - ```
+            struct __true_type {};
+            struct __false_type {};
+          ```
+    - __type_traits
+        - non-trivial default constructor
+        - non-trivial copy constructor
+        - non-trivial assignment operator
+        - non-trivial destructor
+        - ```
+            template<> struct __type_traits<Shape>
+            {
+                typedef __true_type     has_trivial_default_constructor;
+                typedef __false_type    has_trivial_copy_constructor;
+                typedef __false_type    has_trivial_assignment_operator;
+                typedef __false_type    has_trivial_destructor;
+                typedef __false_type    is_POD_type;
+            };
+          ```
+        - ```
+            template<class T> struct __type_traits<T*>
+            {
+                typedef __true_type    has_trivial_default_constructor;
+                typedef __true_type    has_trivial_copy_constructor;
+                typedef __true_type    has_trivial_assignment_operator;
+                typedef __true_type    has_trivial_destructor;
+                typedef __true_type    is_POD_type;
+            };
+          ```
 
 #### Hashtable
 - 可视为一种字典结构
